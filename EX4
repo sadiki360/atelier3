@@ -1,10 +1,18 @@
-
 #include <iostream>
 #include <string>
-#include <list>
 #include <iomanip> 
 
-class Compte; 
+// Déclaration anticipée de la classe Client et Compte
+class Client;
+class Compte;
+
+// --- 3. Fonction utilitaire ---
+
+// Fonction pour calculer les intérêts.
+// Elle est courte et simple, la rendre 'inline' peut donc être un choix de performance.
+inline float calculInteret(float solde, float taux) {
+    return solde * (1.0f + taux);
+}
 
 // --- 1. Classe Client ---
 
@@ -16,34 +24,33 @@ private:
 
 public:
     // 1. Définir les constructeurs nécessaires
-
-    // Constructeur 1 : Création d'un client vide
+    // Constructeur 1 : Client vide
     Client() : id(0), nom(""), prenom("") {
-        std::cout << "Client() - Client par defaut cree." << std::endl;
+        std::cout << "-> Client par defaut cree." << std::endl;
     }
 
-    // Constructeur 2 : Création d'un client avec valeurs initiales
+    // Constructeur 2 : Client avec valeurs initiales
     Client(int _id, const std::string& _nom, const std::string& _prenom)
         : id(_id), nom(_nom), prenom(_prenom) {
-        std::cout << "Client(int, string, string) - Client " << nom << " cree." << std::endl;
+        std::cout << "-> Client " << nom << " " << prenom << " cree." << std::endl;
     }
 
-    // Constructeur 3 : Copie d'un client existant (copie superficielle/profonde via std::string)
+    // Constructeur 3 : Copie d'un client existant
+    // std::string implémente déjà une copie profonde de son contenu, 
+    // donc la copie par défaut des membres est suffisante ici (copie "profonde" pour les strings).
     Client(const Client& autre)
         : id(autre.id), nom(autre.nom), prenom(autre.prenom) {
-        std::cout << "Client(const Client&) - Copie de client creee (Copie des attributs par defaut)." << std::endl;
-        // La copie superficielle est suffisante ici car std::string gère déjà sa propre mémoire (copie profonde)
+        std::cout << "-> Copie de client creee (ID: " << id << ")." << std::endl;
     }
 
-    // 2. Ajouter un destructeur adapté
-    // Attention: faut-il une copie profonde ou superficielle? (voir note plus haut)
-    // Le destructeur est-il indispensable? Pas techniquement, car std::string a son propre destructeur
-    // et il n'y a pas d'allocation de mémoire brute. Mais on l'ajoute par bonne pratique.
+    // 2. Ajouter un destructeur adapté.
+    // Il n'est pas strictement indispensable ici (pas de mémoire brute allouée via 'new').
+    // Cependant, il est ajouté par bonne pratique.
     ~Client() {
-        std::cout << "~Client() - Client " << nom << " detruit." << std::endl;
+        std::cout << "<- Client " << nom << " detruit." << std::endl;
     }
 
-    // 3. Créer une méthode pour afficher les informations d'un client
+    // 3. Méthode pour afficher les informations d'un client
     void afficherInfos() const {
         std::cout << "\n--- Infos Client ---" << std::endl;
         std::cout << "ID: " << id << std::endl;
@@ -51,9 +58,10 @@ public:
         std::cout << "Prenom: " << prenom << std::endl;
         std::cout << "--------------------" << std::endl;
     }
-
-    // Accesseur pour l'ID (utile pour les comptes)
+    
+    // Accesseurs (Getters)
     int getId() const { return id; }
+    std::string getNomComplet() const { return nom + " " + prenom; }
 };
 
 // --- 2. Classe Compte ---
@@ -62,91 +70,121 @@ class Compte {
 private:
     int numero;
     float solde;
-    Client* client; // Pointeur vers un objet Client (pas le propriétaire)
-    static int nbComptes; // Attribut partagé (static)
+    Client* client; // Pointeur vers l'objet Client
+    static int nbComptes; // 4. Attribut partagé (statique)
 
 public:
-    // Constructeur sans paramètre
+    // 1. Constructeurs
+
+    // Constructeur 1 : Sans paramètre
     Compte() : numero(0), solde(0.0f), client(nullptr) {
-        nbComptes++;
-        std::cout << "Compte() - Compte par defaut cree. Total comptes: " << nbComptes << std::endl;
+        nbComptes++; // Incrémentation du compteur
+        std::cout << "-> Compte par defaut cree. Total: " << nbComptes << std::endl;
     }
 
-    // Constructeur avec paramètres
+    // Constructeur 2 : Avec paramètres
     Compte(int num, float s, Client* cl) : numero(num), solde(s), client(cl) {
-        nbComptes++;
-        std::cout << "Compte(int, float, Client*) - Compte " << numero << " cree. Total comptes: " << nbComptes << std::endl;
+        nbComptes++; // Incrémentation du compteur
+        std::cout << "-> Compte " << numero << " cree pour client ID " << (client ? client->getId() : 0) << ". Total: " << nbComptes << std::endl;
     }
 
-    // Constructeur de copie
+    // Constructeur 3 : Par copie
     Compte(const Compte& autre) 
-        : numero(autre.numero), solde(autre.solde), client(autre.client) {
-        // Le Compte copié partage le même pointeur Client et le même numéro (pour l'exercice)
-        // NOTE: En production, il faudrait decider si le client doit etre copie ou non.
-        nbComptes++; // Chaque copie est un nouveau compte ouvert
-        std::cout << "Compte(const Compte&) - Copie de Compte " << numero << " creee. Total comptes: " << nbComptes << std::endl;
+        : numero(autre.numero), solde(autre.solde), client(nullptr) {
+        // ATTENTION : Pour une copie profonde, si le Client était alloué *dans* le Compte,
+        // il faudrait le copier. Ici, le Compte pointe sur un Client externe,
+        // la copie superficielle du pointeur serait risquée.
+        // Option 1 (choisie pour la sécurité de l'exo): Ne pas copier le pointeur client,
+        // pour indiquer que cette copie est un nouveau compte sans propriétaire initial.
+        // Option 2 (plus réaliste): Copier l'adresse du client existant, ce qui est fait ici:
+        client = autre.client;
+        
+        nbComptes++; // Chaque copie est un nouveau compte dans le système
+        std::cout << "-> Copie de Compte " << numero << " creee. Total: " << nbComptes << std::endl;
     }
     
-    // Destructeur
+    // 2. Destructeur
     ~Compte() {
-        nbComptes--;
-        std::cout << "~Compte() - Compte " << numero << " detruit. Total comptes restants: " << nbComptes << std::endl;
+        nbComptes--; // Décrémentation du compteur
+        // Le Compte n'est pas responsable de la mémoire du Client* (il pointe vers un Client créé dans le main),
+        // donc on ne fait PAS 'delete client;'. Si c'était le cas, cela causerait une double suppression.
+        std::cout << "<- Compte " << numero << " detruit. Total restant: " << nbComptes << std::endl;
     }
 
-    // Méthode pour afficher les informations d'un compte
+    // 3. Méthode d’affichage des informations du compte
     void afficherInfos() const {
-        std::cout << "\n--- Infos Compte ---" << std::endl;
+        std::cout << "\n--- Infos Compte " << numero << " ---" << std::endl;
         std::cout << "Numero de compte: " << numero << std::endl;
         std::cout << "Solde: " << std::fixed << std::setprecision(2) << solde << " EUR" << std::endl;
-        if (client) {
-            std::cout << "Proprietaire (ID): " << client->getId() << std::endl;
-        } else {
-            std::cout << "Aucun proprietaire associe." << std::endl;
-        }
-        std::cout << "Total Comptes Ouverts: " << nbComptes << std::endl;
-        std::cout << "----------------------" << std::endl;
+        std::cout << "Proprietaire: " << (client ? client->getNomComplet() : "N/A") << std::endl;
+        std::cout << "--------------------------------" << std::endl;
     }
-    
+
+    // 5. Méthode statique pour afficher le nombre total de comptes
+    static int getTotalComptes() {
+        return nbComptes;
+    }
+
+    // Mutateur pour les intérêts
+    void appliquerInterets(float taux) {
+        solde = calculInteret(solde, taux);
+    }
 };
 
 // Initialisation de l'attribut statique partagé
 int Compte::nbComptes = 0;
 
+// --- 4. Programme principal (main) ---
 
 int main() {
-    // Creation de clients
-    Client c1(1, "Dupont", "Jean");
-    Client c2(2, "Durand", "Marie");
-    Client c_copie = c1; // Test du constructeur de copie Client
-
-    c1.afficherInfos();
-    c_copie.afficherInfos();
-
-    std::cout << "\n--- Gestion Comptes ---\n" << std::endl;
-
-    // Creation de comptes
-    Compte compte_defaut; // Test du constructeur par defaut
-    Compte compte_jean(101, 1500.50f, &c1); // Compte de Jean
-    Compte compte_marie(102, 500.00f, &c2); // Compte de Marie
-
-    // Copie de compte
-    Compte compte_copie = compte_jean; // Test du constructeur de copie Compte
-
-    compte_jean.afficherInfos();
-    compte_marie.afficherInfos();
-    compte_copie.afficherInfos();
-
-    // Suivre le nombre total de comptes existants
-    std::cout << "\nNombre total de comptes (via methode statique): " << Compte::getTotalComptes() << std::endl;
-
-    // Calculer des interets
-    compte_jean.calculerInterets(0.02f); // 2% d'interet
-
-    // Afficher la liste des comptes et clients (non implemente completement ici)
+    std::cout << "--- DEBUT DU PROGRAMME ---\n" << std::endl;
     
-    std::cout << "\n--- Fin du programme ---\n" << std::endl;
+    // 1. Créer plusieurs clients
+    Client c1(10, "Dupont", "Jean");
+    Client c2(20, "Durand", "Marie");
+    Client c_vide;
 
+    std::cout << "\nTotal de comptes avant creation: " << Compte::getTotalComptes() << std::endl;
 
+    // 1. Créer plusieurs comptes
+    Compte cp1(1001, 1250.75f, &c1);
+    Compte cp2(1002, 500.00f, &c2);
+    
+    // 4. Afficher le nombre total de comptes
+    std::cout << "\nTotal de comptes apres creation 1 & 2: " << Compte::getTotalComptes() << std::endl;
+
+    // 2. Copier certains comptes
+    Compte cp3 = cp1; // Constructeur de copie
+    cp3.afficherInfos();
+    
+    // 4. Afficher le nombre total de comptes
+    std::cout << "\nTotal de comptes apres copie: " << Compte::getTotalComptes() << std::endl;
+    
+    // 3. Supprimer certains comptes et observer le comportement du destructeur
+    // Utilisation d'un bloc pour forcer l'appel du destructeur de cp4 (scope local)
+    {
+        Compte cp4(1004, 300.0f, &c1);
+        std::cout << "Total de comptes dans le bloc: " << Compte::getTotalComptes() << std::endl;
+    } // cp4 est détruit ici
+    
+    // 4. Afficher le nombre total de comptes
+    std::cout << "\nTotal de comptes apres destruction de cp4: " << Compte::getTotalComptes() << std::endl;
+
+    // 5. Appliquer des intérêts
+    float taux_interet = 0.015f; // 1.5%
+    std::cout << "\nApplication des interets (" << taux_interet * 100 << "%):" << std::endl;
+    
+    cp1.appliquerInterets(taux_interet);
+    cp2.appliquerInterets(taux_interet);
+    
+    cp1.afficherInfos();
+    
+    // Test de la fonction d'affichage du client
+    c2.afficherInfos();
+
+    std::cout << "\n--- FIN DU PROGRAMME ---" << std::endl;
+
+    // Les destructeurs de cp1, cp2, cp3, c1, c2, c_vide sont appelés ici.
     return 0;
 }
 
