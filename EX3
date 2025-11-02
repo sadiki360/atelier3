@@ -1,1 +1,98 @@
+#include <iostream>
+#include <string>
 
+// Structure pour les éléments de la liste
+struct element {
+    std::string data;
+    element* next;
+
+    // Constructeur pour faciliter la création d'un élément
+    element(const std::string& val, element* n = nullptr) : data(val), next(n) {}
+};
+
+// Classe pour la liste simplement chaînée
+class ListeSimple {
+private:
+    element* head; // Pointeur sur le premier élément de la liste
+
+public:
+    // Constructeur
+    ListeSimple() : head(nullptr) {}
+
+    // Destructeur pour éviter les fuites mémoire (très important !)
+    ~ListeSimple() {
+        element* current = head;
+        while (current != nullptr) {
+            element* nextNode = current->next;
+            delete current; // Supprime l'élément actuel
+            current = nextNode;
+        }
+        head = nullptr; // S'assurer que head est null après la suppression
+    }
+
+    /**
+     * Ajoute un élément au début de la liste.
+     * @param val La donnée à ajouter.
+     */
+    void ajouterDebut(const std::string& val) {
+        element* nouveau = new element(val, head);
+        head = nouveau;
+        std::cout << "Ajout de '" << val << "' au debut." << std::endl;
+    }
+
+    /**
+     * Supprime le premier élément de la liste.
+     * Évite la fuite mémoire en libérant l'élément supprimé.
+     */
+    void supprimerDebut() {
+        if (head == nullptr) {
+            std::cout << "La liste est vide, rien a supprimer." << std::endl;
+            return;
+        }
+        element* temp = head;
+        head = head->next; // Le nouveau premier élément est le suivant
+        std::cout << "Suppression de '" << temp->data << "' du debut." << std::endl;
+        delete temp; // Libère la mémoire
+    }
+
+    /**
+     * Affiche tous les éléments de la liste.
+     */
+    void afficherListe() const {
+        std::cout << "\n--- Contenu de la liste ---" << std::endl;
+        element* current = head;
+        if (current == nullptr) {
+            std::cout << "La liste est vide." << std::endl;
+            return;
+        }
+        while (current != nullptr) {
+            std::cout << current->data << " -> ";
+            current = current->next;
+        }
+        std::cout << "NULL" << std::endl;
+        std::cout << "---------------------------" << std::endl;
+    }
+};
+
+// Fonction main pour tester la classe ListeSimple
+int main_exercice3() {
+    ListeSimple maListe;
+
+    maListe.ajouterDebut("Element C");
+    maListe.ajouterDebut("Element B");
+    maListe.ajouterDebut("Element A");
+
+    maListe.afficherListe();
+
+    maListe.supprimerDebut();
+    maListe.afficherListe();
+
+    maListe.supprimerDebut();
+    maListe.supprimerDebut();
+    maListe.supprimerDebut(); // Tentative de suppression sur liste vide
+
+    // Le destructeur sera appelé automatiquement à la fin du scope, 
+    // assurant qu'il n'y ait pas de fuite mémoire.
+
+    return 0;
+}
