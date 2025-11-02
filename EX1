@@ -1,1 +1,68 @@
+#include <iostream>
+using namespace std;
 
+class Pile {
+private:
+    int *tab;     // tableau dynamique
+    int taille;   // taille maximale
+    int sommet;   // indice du dernier élément empilé
+
+public:
+    // Constructeur
+    Pile(int t = 10) {
+        taille = t;
+        tab = new int[taille];
+        sommet = -1;
+    }
+
+    // Destructeur
+    ~Pile() {
+        delete[] tab;
+    }
+
+    // Empiler (push)
+    void push(int val) {
+        if (sommet == taille - 1)
+            cout << "Pile pleine !" << endl;
+        else
+            tab[++sommet] = val;
+    }
+
+    // Dépiler (pop)
+    int pop() {
+        if (sommet == -1) {
+            cout << "Pile vide !" << endl;
+            return -1;
+        } else
+            return tab[sommet--];
+    }
+
+    // Afficher le contenu de la pile
+    void afficher() {
+        cout << "Contenu de la pile : ";
+        for (int i = 0; i <= sommet; i++)
+            cout << tab[i] << " ";
+        cout << endl;
+    }
+};
+
+int main() {
+    Pile p1(5), p2(3);
+
+    p1.push(10);
+    p1.push(20);
+    p1.push(30);
+    p1.afficher();
+
+    cout << "Élément dépilé : " << p1.pop() << endl;
+    p1.afficher();
+
+    p2.push(100);
+    p2.push(200);
+    p2.afficher();
+
+    return 0;
+}
+//
+// Created by lenovo on 02/11/2025.
+//
