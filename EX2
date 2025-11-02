@@ -1,1 +1,60 @@
+#include <iostream>
+using namespace std;
+
+class Fichier {
+private:
+    char *P;   // pointeur vers la zone mémoire
+    int longueur;
+
+public:
+    // Constructeur
+    Fichier() {
+        P = nullptr;
+        longueur = 0;
+        cout << "Constructeur appelé." << endl;
+    }
+
+    // Destructeur
+    ~Fichier() {
+        delete[] P;
+        cout << "Destructeur appelé. Mémoire libérée." << endl;
+    }
+
+    // Méthode Creation : allouer l'espace mémoire
+    void Creation(int n) {
+        longueur = n;
+        P = new char[longueur];
+        cout << "Mémoire de " << longueur << " octets allouée." << endl;
+    }
+
+    // Méthode Remplit : remplir arbitrairement la mémoire
+    void Remplit() {
+        if (P != nullptr) {
+            for (int i = 0; i < longueur; i++)
+                P[i] = 'A' + (i % 26); // remplir avec des lettres
+            cout << "Mémoire remplie." << endl;
+        }
+    }
+
+    // Méthode Affiche : afficher le contenu
+    void Affiche() {
+        if (P != nullptr) {
+            cout << "Contenu du fichier : ";
+            for (int i = 0; i < longueur; i++)
+                cout << P[i];
+            cout << endl;
+        }
+    }
+};
+
+int main() {
+    Fichier *f = new Fichier();
+
+    f->Creation(20);
+    f->Remplit();
+    f->Affiche();
+
+    delete f; // appel du destructeur automatiquement
+    return 0;
+}
 
